@@ -91,7 +91,6 @@ type UsersResponse struct {
 
 func (this *ApiWrapper) GetUserCount(channelName string) int {
 	var usersresponse UsersResponse
-	var count int
 	if len(channelName) == 0 {
 		pr("Empty channel: ", channelName)
 		return 0
@@ -101,7 +100,6 @@ func (this *ApiWrapper) GetUserCount(channelName string) int {
 		if err != nil {
 			fmt.Println("Failed to get user count for " + channelName)
 		}
-		count = usersresponse.Chatter_count
-		return count
+		return usersresponse.Chatter_count
 	}
 }

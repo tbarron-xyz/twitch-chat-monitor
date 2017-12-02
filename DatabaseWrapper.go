@@ -92,6 +92,6 @@ func mongoDatabase() DatabaseWrapper {
 }
 
 type snapshot struct {
-	Time int64          `redis:"time"` // has to be capitalized ; has to be int64 to to be recognized by expiresAt
+	Time int64          `redis:"time"`
 	Data map[string]int `redis:"data"`
 }
