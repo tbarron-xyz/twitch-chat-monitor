@@ -48,7 +48,7 @@ type EmotesResponse struct {
 
 func (this *ApiWrapper) GetEmotes() (emotes, emotesContainingKappa []string) {
 	var emotesresponse map[string]interface{}
-	url := "http://twitchemotes.com/api_cache/v3/global.json"
+	url := "https://api.twitch.tv/kraken/chat/emoticon_images"
 	this.getJson(url, &emotesresponse)
 	emotes = []string{}
 	for key, _ := range emotesresponse {
@@ -70,7 +70,7 @@ type StreamsResponse struct {
 }
 
 func (this *ApiWrapper) GetChannels() ([]string, error) {
-	url := "https://api.twitch.tv/kraken/streams"
+	url := "https://api.twitch.tv/helix/streams"
 
 	var streamsresponse StreamsResponse
 	err := this.getJsonWithClientId(url, &streamsresponse)

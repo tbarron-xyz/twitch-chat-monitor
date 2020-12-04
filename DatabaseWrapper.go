@@ -26,7 +26,7 @@ type DynamoForWrapping struct {
 func (d *DynamoForWrapping) Insert(args ...interface{}) error {
 	var snap, ok = args[0].(snapshot)
 	if !ok {
-		fmt.Println("Insert but not a snapshot")
+		fmt.Println("Insert called but argument not a snapshot")
 	}
 	dataAsMapStringAttributeValue := map[string]*dynamodb.AttributeValue{}
 	for emote, count := range snap.Data {

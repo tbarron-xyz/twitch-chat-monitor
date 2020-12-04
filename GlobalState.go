@@ -17,15 +17,15 @@ type GlobalState struct {
 	channels              []string
 	redisclient           *RedisWrapper
 	ircclient             *irc.Connection
-	snapsCollection       DatabaseWrapper
+	db                    DatabaseWrapper
 	config                *Config
 	httpService           *ApiWrapper
 	MessagesLast5Minutes  int
 }
 
-func MakeGlobalState(config *Config, redis *RedisWrapper, snaps DatabaseWrapper) *GlobalState {
+func MakeGlobalState(config *Config, redis *RedisWrapper, db DatabaseWrapper) *GlobalState {
 	httpService := &ApiWrapper{TwitchApiClientId: config.TwitchApiClientId}
-	state := &GlobalState{config: config, httpService: httpService, snapsCollection: snaps, redisclient: redis}
+	state := &GlobalState{config: config, httpService: httpService, db: db, redisclient: redis}
 	return state
 }
 
@@ -65,14 +65,14 @@ func (state *GlobalState) ircPrivmsgCallback(ircevent *irc.Event) {
 
 	var emoteCounts = map[string]int{}
 
-	for _, e := range state.emotes {
-		ecount := strings.Count(msg, e)
-		if e == "Kappa" { // Kappa gets overcounted due to being a substring of some other emotes
+	for _, emote := range state.emotes {
+		occurrences := strings.Count(msg, emote)
+		if emote == "Kappa" { // Kappa gets overcounted due to being a substring of some other emotes
 			for _, k := range state.emotesContainingKappa {
-				ecount -= strings.Count(msg, k)
+				occurrences -= strings.Count(msg, k)
 			}
 		}
-		emoteCounts[e] = ecount
+		emoteCounts[emote] = occurrences
 	}
 
 	state.incrementCache(channel, emoteCounts)
@@ -81,6 +81,22 @@ func (state *GlobalState) ircPrivmsgCallback(ircevent *irc.Event) {
 func (state *GlobalState) ircConnectCallback() {
 	state.channels = []string{}
 	state.updateChannelsLoop()
+}
+
+func (state *GlobalState) cloneCacheToStorageLoop() {
+	fmt.Println("Cloning cache to storage.")
+	defer time.AfterFunc(5*time.Minute, state.cloneCacheToStorageLoop)
+	res, err := redis.IntMap(state.redisclient.Do("HGETALL", "curEmoteCountOverall")) // res is a map[string]int
+	if err != nil {
+		fmt.Println("Failed to HGETALL curEmoteCountOverall at " + time.Now().String())
+		return
+	}
+	snap := snapshot{int64(time.Now().Unix()), res}
+	err = state.db.Insert(snap)
+	if err != nil {
+		fmt.Println("Failed to insert snapshot to database at "+time.Now().String(), err)
+		return
+	}
 }
 
 func (state *GlobalState) updateChannelsLoop() {
@@ -96,22 +112,6 @@ func (state *GlobalState) updateChannelsLoop() {
 	EH(err)
 
 	state.redisclient.Do("SET", "channels", actualChannelListJson)
-}
-
-func (state *GlobalState) cloneCacheToStorageLoop() {
-	fmt.Println("Cloning cache to storage.")
-	defer time.AfterFunc(5*time.Minute, state.cloneCacheToStorageLoop)
-	res, err := redis.IntMap(state.redisclient.Do("HGETALL", "curEmoteCountOverall")) // res is a map[string]int
-	if err != nil {
-		fmt.Println("Failed to HGETALL curEmoteCountOverall at " + time.Now().String())
-		return
-	}
-	snap := snapshot{int64(time.Now().Unix()), res}
-	err = state.snapsCollection.Insert(snap)
-	if err != nil {
-		fmt.Println("Failed to insert snapshot to database at "+time.Now().String(), err)
-		return
-	}
 }
 
 func (state *GlobalState) joinAndPartChannels(top25Channels []string) []string {

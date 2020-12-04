@@ -1,5 +1,10 @@
 package main
 
+import (
+	"net/http"
+	_ "net/http/pprof"
+)
+
 // "time"
 // "sync"
 // "runtime"
@@ -11,8 +16,9 @@ package main
 func main() {
 	var config = loadConfig()
 	var redisclient = MakeRedisWrapper()
-	// var snaps = mongoDatabase()
-	var snaps = dynamodbDatabase()
-	var globalState = MakeGlobalState(config, redisclient, snaps)
+	// var db = mongoDatabase()
+	var db = dynamodbDatabase()
+	var globalState = MakeGlobalState(config, redisclient, db)
+	go http.ListenAndServe("localhost:6060", nil)
 	globalState.Start()
 }
