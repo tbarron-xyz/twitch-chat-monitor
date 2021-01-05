@@ -162,7 +162,7 @@ func (state *GlobalState) updateUsersLoop() {
 }
 
 func (state *GlobalState) updateEmotes() {
-	var emotes, emotesContainingKappa = state.httpService.GetEmotes()
+	var emotes, emotesContainingKappa, _ = state.httpService.GetEmotes()
 	fmt.Println("Emotes:", emotes)
 	fmt.Println("Emotes containing Kappa: ", emotesContainingKappa)
 	state.emotes = emotes

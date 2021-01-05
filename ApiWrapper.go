@@ -46,10 +46,13 @@ type EmotesResponse struct {
 	Emotes map[string]interface{}
 }
 
-func (this *ApiWrapper) GetEmotes() (emotes, emotesContainingKappa []string) {
+func (this *ApiWrapper) GetEmotes() (emotes, emotesContainingKappa []string, e error) {
 	var emotesresponse map[string]interface{}
 	url := "http://twitchemotes.com/api_cache/v3/global.json"
-	this.getJson(url, &emotesresponse)
+	var err = this.getJsonWithClientId(url, &emotesresponse)
+	if err != nil {
+		return nil, nil, err
+	}
 	emotes = []string{}
 	for key, _ := range emotesresponse {
 		emotes = append(emotes, key)
